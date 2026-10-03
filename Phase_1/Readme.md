@@ -4,7 +4,7 @@ This phase focuses on Rust's core memory model, ownership, borrowing, lifetimes,
 
 ## Projects in this Phase
 
-1. **Zero-Copy String Tokenizer / Scanner**
+1. **[Zero-Copy String Tokenizer / Scanner](./zero_copy_tokenizer)** ✅
    - **Focus**: Slices, lifetimes (`'a`), zero-copy parsing, and iterator patterns without heap reallocations.
 
 2. **Custom Smart Pointer (`MyBox` & `MyRc`)**

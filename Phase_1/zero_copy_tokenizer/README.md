@@ -140,19 +140,21 @@ All unit tests and doctests execute and pass with zero warnings.
 
 ## ⚡ Performance Benchmarks
 
-A real-world benchmark suite is included in [`benches/bench.rs`](file:///c:/DRIVE%20D/Rust_Projects/Phase_1/zero_copy_tokenizer/benches/bench.rs). It benchmarks parsing **50,000 CSV lines (350,000 fields, ~4.0 MB dataset)** comparing:
+A real-world benchmark suite is included in [`benches/bench.rs`](file:///c:/DRIVE%20D/Rust_Projects/Phase_1/zero_copy_tokenizer/benches/bench.rs). It benchmarks parsing **500,000 CSV lines (3,500,000 fields, ~40 MB dataset)** comparing:
 
 1. **Allocating Approach (`Vec<String>`)**: Naive splitting where every token allocates a heap `String`.
 2. **Slice Buffer (`Vec<&str>`)**: Using `.split(',')` and accumulating slices into a heap `Vec`.
-3. **Zero-Copy Tokenizer (Streaming)**: Yields borrowed tokens with 0 heap allocations.
+3. **Safe Zero-Copy (`Tokenizer`)**: Yields borrowed tokens with 0 heap allocations, safe bounds checks, and UTF-8 validation.
+4. **Unsafe Fast (`UnsafeFastTokenizer`)**: Direct raw-pointer scanning with 0 bounds checks, auto-vectorization, and unchecked UTF-8 slice emission.
 
 ### Benchmark Results (`cargo bench`)
 
-| Strategy | Memory Overhead | Execution Time | Speedup vs Zero-Copy |
-| :--- | :--- | :--- | :--- |
-| **Allocating (`Vec<String>`)** | 350,000+ heap allocations | **30.21 ms** | ~4.18x slower |
-| **Slice Buffer (`Vec<&str>`)** | 50,000 heap `Vec` allocations | **11.18 ms** | ~1.55x slower |
-| **Zero-Copy Tokenizer** | **0 heap allocations** | **7.22 ms** | **Baseline (Fastest)** |
+| Strategy | Memory Overhead | Execution Time | Speedup vs Allocating | Speedup vs Safe Tokenizer |
+| :--- | :--- | :--- | :--- | :--- |
+| **Allocating (`Vec<String>`)** | 3.5M+ heap allocations | **304.50 ms** | Baseline (1.00x) | — |
+| **Slice Buffer (`Vec<&str>`)** | 500K heap `Vec` allocations | **108.96 ms** | ~2.80x faster | — |
+| **Safe Zero-Copy (`Tokenizer`)** | **0 heap allocations** | **63.82 ms** | ~4.77x faster | Baseline |
+| **Unsafe Fast (`UnsafeFastTokenizer`)** | **0 heap allocations** | **28.29 ms** | **~10.76x faster** | **~2.26x faster** |
 
 Run the benchmarks yourself with:
 

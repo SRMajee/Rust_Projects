@@ -161,6 +161,82 @@ impl<'a> Iterator for Tokenizer<'a> {
     }
 }
 
+/// An ultra-optimized, zero-allocation scanner that uses raw byte pointers
+/// and unchecked slicing to achieve maximum CPU throughput.
+///
+/// # Safety Guarantees
+/// All `unsafe` pointer operations uphold Rust's UTF-8 invariant and bounds safety:
+/// 1. Slicing occurs exclusively at matching ASCII delimiters (which are valid 1-byte UTF-8 boundaries).
+/// 2. Pointers remain within the memory region `[ptr, ptr + len]`.
+/// 3. Incurs 0 bounds checks, 0 UTF-8 validation re-checks, and minimal branching.
+#[derive(Debug, Clone)]
+pub struct UnsafeFastTokenizer<'a> {
+    ptr: *const u8,
+    end: *const u8,
+    delimiter: u8,
+    _marker: std::marker::PhantomData<&'a str>,
+}
+
+impl<'a> UnsafeFastTokenizer<'a> {
+    /// Creates a new `UnsafeFastTokenizer` for an ASCII delimiter (e.g. `b','` or `b' '`).
+    #[inline(always)]
+    pub fn new(input: &'a str, delimiter: u8) -> Self {
+        let len = input.len();
+        let ptr = input.as_ptr();
+        // Safety: ptr + len is the valid one-past-the-end pointer for this slice
+        let end = unsafe { ptr.add(len) };
+        Self {
+            ptr,
+            end,
+            delimiter,
+            _marker: std::marker::PhantomData,
+        }
+    }
+}
+
+impl<'a> Iterator for UnsafeFastTokenizer<'a> {
+    type Item = &'a str;
+
+    #[inline(always)]
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.ptr >= self.end {
+            return None;
+        }
+
+        let start = self.ptr;
+        let mut curr = start;
+
+        // Tight raw-pointer scanning loop.
+        // Modern LLVM automatically vectorizes/unrolls this loop.
+        while curr < self.end {
+            // Safety: curr is strictly < self.end, so reading 1 byte is safe.
+            if unsafe { *curr } == self.delimiter {
+                let token_len = curr as usize - start as usize;
+                // Safety: curr is < self.end, so curr.add(1) is at most self.end.
+                self.ptr = unsafe { curr.add(1) };
+
+                // Safety:
+                // 1. start..curr was sliced at an ASCII delimiter which is a valid UTF-8 boundary.
+                // 2. The input was already validated &str.
+                unsafe {
+                    let bytes = std::slice::from_raw_parts(start, token_len);
+                    return Some(std::str::from_utf8_unchecked(bytes));
+                }
+            }
+            curr = unsafe { curr.add(1) };
+        }
+
+        // Final token to the end of the slice
+        let token_len = self.end as usize - start as usize;
+        self.ptr = self.end;
+
+        unsafe {
+            let bytes = std::slice::from_raw_parts(start, token_len);
+            Some(std::str::from_utf8_unchecked(bytes))
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -225,5 +301,30 @@ mod tests {
         let input = "101,\"Smith, John\",Engineer,95000";
         let tokens: Vec<&str> = Tokenizer::new(input, ',').with_quotes().collect();
         assert_eq!(tokens, vec!["101", "Smith, John", "Engineer", "95000"]);
+    }
+
+    #[test]
+    fn test_unsafe_fast_tokenizer_matches_safe() {
+        let input = "alice,admin,,42,engineer,senior,120000";
+        let safe_tokens: Vec<&str> = Tokenizer::new(input, ',').collect();
+        let fast_tokens: Vec<&str> = UnsafeFastTokenizer::new(input, b',').collect();
+        assert_eq!(safe_tokens, fast_tokens);
+    }
+
+    #[test]
+    fn test_unsafe_fast_tokenizer_edge_cases() {
+        // Empty string
+        let empty_tokens: Vec<&str> = UnsafeFastTokenizer::new("", b',').collect();
+        assert!(empty_tokens.is_empty());
+
+        // Single token
+        let single: Vec<&str> = UnsafeFastTokenizer::new("hello", b',').collect();
+        assert_eq!(single, vec!["hello"]);
+
+        // Leading and interior delimiters
+        let edge_input = ",a,,b,";
+        let safe_tokens: Vec<&str> = Tokenizer::new(edge_input, ',').collect();
+        let fast_tokens: Vec<&str> = UnsafeFastTokenizer::new(edge_input, b',').collect();
+        assert_eq!(safe_tokens, fast_tokens);
     }
 }

@@ -1,0 +1,7 @@
+[package]
+name = "custom_smart_pointers"
+version = "0.1.0"
+edition = "2024"
+description = "Custom implementation of Box and Rc using low-level allocators and raw pointers"
+
+[dependencies]

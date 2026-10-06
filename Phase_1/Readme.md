@@ -10,5 +10,5 @@ This phase focuses on Rust's core memory model, ownership, borrowing, lifetimes,
 2. **[Custom Smart Pointer (`MyBox` & `MyRc`)](./custom_smart_pointers)** ✅
    - **Focus**: Custom dereferencing (`Deref`, `DerefMut`), resource cleanup (`Drop`), reference counting, interior mutability, and raw heap allocation (`std::alloc`).
 
-3. **[NEW] Custom Bump Allocator**
-   - **Focus**: Low-level memory layout, pointer arithmetic, memory alignment, `std::alloc::Layout`, and arena-style allocation.
+3. **[Custom Bump Allocator](./bump_allocator)** ✅
+   - **Focus**: Low-level memory layout, pointer arithmetic, memory alignment, `std::alloc::Layout`, thread-safe `AtomicUsize` bump allocation, and `GlobalAlloc` integration.

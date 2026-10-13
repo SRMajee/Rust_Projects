@@ -7,7 +7,7 @@ This phase delves into Rust's advanced type system, trait-driven design, zero-co
 1. **Typestate Pattern & Phantom Types (Order Flow)** ✅
    - **Focus**: Compile-time state machines, `PhantomData`, trait bounds, and eliminating invalid runtime states in order lifecycle processing.
 
-2. **Declarative JSON DSL**
+2. **Declarative JSON DSL** ✅
    - **Focus**: `macro_rules!` metaprogramming, syntax tree expansion, hygiene, and ergonomic domain-specific languages in Rust.
 
 3. **[NEW] Custom Iterator Combinators (`Map`, `Filter`)**

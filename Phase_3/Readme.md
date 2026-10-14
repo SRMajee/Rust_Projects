@@ -10,5 +10,5 @@ This phase delves into Rust's advanced type system, trait-driven design, zero-co
 2. **Declarative JSON DSL** ✅
    - **Focus**: `macro_rules!` metaprogramming, syntax tree expansion, hygiene, and ergonomic domain-specific languages in Rust.
 
-3. **[NEW] Custom Iterator Combinators (`Map`, `Filter`)**
+3. **Custom Iterator Combinators (`Map`, `Filter`)** ✅
    - **Focus**: Implementing `Iterator` trait from scratch, lazy evaluation, combinator chaining, and generic associated types.
